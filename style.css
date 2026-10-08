@@ -1,0 +1,818 @@
+/* ==========================================================================
+   Glass Thermometer — styles
+   Live values (--rgb, --liquid*, --level, --glow-strength, --track-gradient)
+   are written by script.js from the current temperature.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  --bg: #070a12;
+  --text: #eef2ff;
+  --muted: rgba(238, 242, 255, 0.66);
+  --hairline: rgba(255, 255, 255, 0.1);
+  --font: "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+
+  /* Defaults until script.js takes over */
+  --rgb: 60, 214, 110;
+  --liquid: rgb(60, 214, 110);
+  --liquid-light: rgb(158, 234, 183);
+  --liquid-dark: rgb(33, 118, 61);
+  --liquid-text: rgb(166, 237, 192);
+  --track-gradient: linear-gradient(90deg, #3cd66e, #3cd66e);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.4;
+  overflow-x: hidden;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+/* ---------- Ambient atmosphere (subtle, follows the liquid colour) ---------- */
+
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 50% at 50% 42%, rgba(var(--rgb), 0.17), transparent 72%),
+    radial-gradient(60% 40% at 50% 105%, rgba(var(--rgb), 0.1), transparent 70%),
+    linear-gradient(180deg, #0b101c 0%, #05070d 100%);
+}
+
+/* ---------- Layout ---------- */
+
+.app {
+  display: grid;
+  gap: 22px;
+  justify-items: center;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 28px 16px 44px;
+  text-align: center;
+}
+
+.app-header {
+  display: grid;
+  gap: 4px;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.25rem, 4.5vw, 1.7rem);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.stage {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+@media (min-width: 960px) {
+  .app {
+    max-width: 1120px;
+    min-height: 100vh;
+    min-height: 100svh;
+    grid-template-columns: 1fr minmax(360px, 440px);
+    grid-template-areas:
+      "header header"
+      "stage  readout"
+      "stage  controls";
+    grid-template-rows: auto auto auto;
+    align-content: center;
+    justify-items: stretch;
+    column-gap: clamp(48px, 8vw, 120px);
+    row-gap: 28px;
+    padding: 40px 32px;
+    text-align: left;
+  }
+
+  .app-header {
+    grid-area: header;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .readout {
+    grid-area: readout;
+    align-self: end;
+  }
+
+  .readout .readout-value {
+    justify-content: flex-start;
+  }
+
+  .stage {
+    grid-area: stage;
+    align-self: center;
+  }
+
+  .controls {
+    grid-area: controls;
+    align-self: start;
+  }
+}
+
+/* ---------- Readout ---------- */
+
+.readout {
+  display: grid;
+  gap: 6px;
+  justify-items: inherit;
+}
+
+.readout-label {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.readout-value {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  margin: 0;
+  font-size: clamp(3.6rem, 13vw, 6.4rem);
+  font-weight: 200;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 44px rgba(var(--rgb), 0.5);
+}
+
+.readout-unit {
+  margin: 0.12em 0 0 0.1em;
+  font-size: 0.36em;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--liquid-text);
+}
+
+.readout-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 0;
+  padding: 6px 14px;
+  width: max-content;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--liquid-text);
+  background: rgba(var(--rgb), 0.12);
+  border: 1px solid rgba(var(--rgb), 0.35);
+  transition: color 0.4s ease;
+}
+
+.readout-status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--liquid);
+  box-shadow: 0 0 10px 2px rgba(var(--rgb), 0.8);
+}
+
+/* ==========================================================================
+   Thermometer
+   Geometry (measured from the bottom of .thermo):
+     bulb        0 → --bulb
+     tube        (--bulb − 14px) → top
+     scale/track starts at --y0 and is --tube-h tall; level 0–100% maps onto it.
+   ========================================================================== */
+
+.thermo {
+  --tube-w: 38px;
+  --bulb: 92px;
+  --tube-h: clamp(230px, 40vh, 360px);
+  --y0: calc(var(--bulb) + 10px);
+  --level: 50%;
+  --glow-strength: 0.5;
+
+  position: relative;
+  width: min(100%, 340px);
+  height: calc(var(--bulb) + var(--tube-h) + 32px);
+  contain: layout style;
+}
+
+@media (max-width: 400px) {
+  .thermo {
+    --tube-w: 34px;
+    --bulb: 84px;
+  }
+}
+
+@media (min-width: 960px) {
+  .thermo {
+    --tube-h: clamp(320px, 54vh, 500px);
+  }
+}
+
+/* ----- Scale (left of the tube) ----- */
+
+.scale {
+  position: absolute;
+  right: calc(50% + var(--tube-w) / 2 + 10px);
+  left: 0;
+  bottom: var(--y0);
+  height: var(--tube-h);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.scale-unit {
+  position: absolute;
+  right: calc(50% + var(--tube-w) / 2 + 10px);
+  bottom: calc(var(--y0) + var(--tube-h) + 6px);
+  font-size: 0.72rem;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--liquid-text);
+}
+
+.tick {
+  position: absolute;
+  right: 0;
+  bottom: var(--p);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transform: translateY(50%);
+}
+
+.tick-line {
+  display: block;
+  width: 7px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.tick-major .tick-line {
+  width: 15px;
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.tick-label {
+  font-size: 0.74rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* ----- Glass: bulb ----- */
+
+.bulb,
+.bulb-glow {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: var(--bulb);
+  height: var(--bulb);
+  margin-left: calc(var(--bulb) / -2);
+  border-radius: 50%;
+}
+
+.bulb-glow {
+  background: var(--liquid);
+  opacity: calc(var(--glow-strength) * 0.75);
+  filter: blur(24px);
+}
+
+.bulb {
+  border: 2px solid rgba(255, 255, 255, 0.26);
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05) 45%, rgba(255, 255, 255, 0.03) 70%, rgba(255, 255, 255, 0.1));
+  box-shadow:
+    inset 0 0 20px rgba(255, 255, 255, 0.1),
+    inset -8px -12px 20px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(3px);
+  /* Open a gap in the bulb's rim so the tube flows into it */
+  -webkit-mask:
+    linear-gradient(#000, #000),
+    linear-gradient(#000, #000) top center / calc(var(--tube-w) - 4px) 9px no-repeat;
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000, #000),
+    linear-gradient(#000, #000) top center / calc(var(--tube-w) - 4px) 9px no-repeat;
+  mask-composite: exclude;
+}
+
+.bulb-liquid {
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 38% 30%, var(--liquid-light), var(--liquid) 48%, var(--liquid-dark) 100%);
+  box-shadow: inset 0 -6px 14px rgba(0, 0, 0, 0.25);
+}
+
+/* ----- Glass: tube ----- */
+
+.tube {
+  position: absolute;
+  bottom: calc(var(--bulb) - 14px);
+  left: 50%;
+  width: var(--tube-w);
+  height: calc(var(--tube-h) + 46px);
+  margin-left: calc(var(--tube-w) / -2);
+  border: 2px solid rgba(255, 255, 255, 0.26);
+  border-bottom: 0;
+  border-radius: calc(var(--tube-w) / 2) calc(var(--tube-w) / 2) 0 0;
+}
+
+/* Glass fill: fades out near the foot so it melts into the bulb */
+.tube::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.03) 35%, rgba(255, 255, 255, 0.02) 65%, rgba(255, 255, 255, 0.11));
+  box-shadow:
+    inset 0 0 12px rgba(255, 255, 255, 0.08),
+    inset 5px 0 8px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(3px);
+  -webkit-mask-image: linear-gradient(to top, transparent 0, #000 18px);
+  mask-image: linear-gradient(to top, transparent 0, #000 18px);
+}
+
+.liquid-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 24px;
+  height: var(--tube-h);
+}
+
+.liquid,
+.liquid-glow {
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  height: calc(var(--level) + 24px);
+  border-radius: 999px 999px 0 0;
+  transform: translateX(-50%);
+}
+
+.liquid-glow {
+  width: 22px;
+  background: var(--liquid);
+  opacity: var(--glow-strength);
+  filter: blur(11px);
+}
+
+.liquid {
+  width: calc(var(--tube-w) - 20px);
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, var(--liquid-dark) 0%, var(--liquid) 28%, var(--liquid-light) 46%, var(--liquid) 66%, var(--liquid-dark) 100%);
+  /* Fade the foot into the bulb so the two liquids read as one body */
+  -webkit-mask-image: linear-gradient(to top, transparent 0, #000 9px);
+  mask-image: linear-gradient(to top, transparent 0, #000 9px);
+}
+
+/* Meniscus highlight */
+.liquid::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 12px;
+  background: radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.6), transparent 70%);
+}
+
+/* Slow travelling shine */
+.liquid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to bottom, transparent 0, transparent 40%, rgba(255, 255, 255, 0.24) 50%, transparent 60%, transparent 100%);
+  background-size: 100% 260px;
+  animation: liquid-shine 6s linear infinite;
+}
+
+@keyframes liquid-shine {
+  to {
+    background-position: 0 -260px;
+  }
+}
+
+/* ----- Reflections (kept inside the glass) ----- */
+
+.glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.tube .glare::before {
+  content: "";
+  position: absolute;
+  top: 5%;
+  bottom: 4%;
+  left: 17%;
+  width: 11%;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.6) 14%, rgba(255, 255, 255, 0.2) 80%, transparent);
+}
+
+.tube .glare::after {
+  content: "";
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  top: -40%;
+  height: 35%;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.14), transparent);
+  animation: glass-sheen 9s ease-in-out infinite;
+}
+
+@keyframes glass-sheen {
+  0% {
+    transform: translateY(0);
+  }
+  60%,
+  100% {
+    transform: translateY(400%);
+  }
+}
+
+.bulb .glare::before {
+  content: "";
+  position: absolute;
+  top: 12%;
+  left: 17%;
+  width: 30%;
+  height: 18%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 40% 40%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 70%);
+  transform: rotate(-32deg);
+}
+
+.bulb .glare::after {
+  content: "";
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  bottom: 7%;
+  height: 22%;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+}
+
+/* ----- Current-value marker (rides on top of the liquid) ----- */
+
+.marker-track {
+  position: absolute;
+  left: calc(50% + var(--tube-w) / 2 + 6px);
+  right: 0;
+  bottom: var(--y0);
+  height: var(--tube-h);
+  pointer-events: none;
+}
+
+.marker {
+  position: absolute;
+  left: 0;
+  bottom: var(--level);
+  display: flex;
+  align-items: center;
+  transform: translateY(50%);
+}
+
+.marker::before {
+  content: "";
+  width: 16px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--liquid);
+  box-shadow: 0 0 8px rgba(var(--rgb), 0.8);
+}
+
+.marker-value {
+  padding: 5px 9px;
+  border: 1px solid rgba(var(--rgb), 0.7);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  background: rgba(var(--rgb), 0.24);
+  backdrop-filter: blur(6px);
+}
+
+/* ==========================================================================
+   Controls
+   ========================================================================== */
+
+.panel {
+  display: grid;
+  gap: 22px;
+  width: 100%;
+  padding: 22px;
+  text-align: left;
+  border: 1px solid var(--hairline);
+  border-radius: 28px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025));
+  box-shadow:
+    0 30px 60px -30px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+@media (max-width: 400px) {
+  .panel {
+    padding: 18px;
+    border-radius: 24px;
+  }
+}
+
+.control-group {
+  display: grid;
+  gap: 10px;
+}
+
+.control-inline {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.control-title {
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hint {
+  min-height: 2.8em;
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* ----- Segmented toggle (mode + unit) ----- */
+
+.segmented {
+  --count: 2;
+  --index: 0;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--count), 1fr);
+  padding: 4px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.segmented::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / var(--count));
+  border: 1px solid rgba(var(--rgb), 0.65);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(var(--rgb), 0.4), rgba(var(--rgb), 0.2));
+  box-shadow: 0 0 18px rgba(var(--rgb), 0.3);
+  transition: transform 0.35s cubic-bezier(0.3, 0.8, 0.3, 1);
+}
+
+.segmented::before {
+  transform: translateX(calc(var(--index) * 100%));
+}
+
+.segmented-3 {
+  --count: 3;
+}
+
+.segmented-3 .segment {
+  padding: 0 6px;
+  letter-spacing: 0.1em;
+}
+
+.segment {
+  position: relative;
+  z-index: 1;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+
+.segment[aria-pressed="true"] {
+  color: #fff;
+}
+
+.segment:hover:not([aria-pressed="true"]) {
+  color: var(--text);
+}
+
+.segmented-compact .segment {
+  min-width: 64px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  font-size: 0.95rem;
+}
+
+/* ----- Slider ----- */
+
+.slider-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.slider-output {
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--liquid-text);
+}
+
+.slider-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 10px;
+}
+
+.slider {
+  width: 100%;
+  height: 32px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.slider:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--track-gradient);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.slider::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--track-gradient);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.slider::-webkit-slider-thumb {
+  width: 24px;
+  height: 24px;
+  margin-top: -8px;
+  border: 4px solid var(--liquid);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 5px rgba(var(--rgb), 0.25), 0 4px 10px rgba(0, 0, 0, 0.45);
+  -webkit-appearance: none;
+  appearance: none;
+  transition: transform 0.15s ease;
+}
+
+.slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 4px solid var(--liquid);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 5px rgba(var(--rgb), 0.25), 0 4px 10px rgba(0, 0, 0, 0.45);
+  transition: transform 0.15s ease;
+}
+
+.slider:not(:disabled):active::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+
+.slider:not(:disabled):active::-moz-range-thumb {
+  transform: scale(1.12);
+}
+
+.slider:focus-visible {
+  outline-offset: 6px;
+  border-radius: 8px;
+}
+
+.slider-limits {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 54px;
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.step-button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #fff;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
+}
+
+.step-button:hover:not(:disabled) {
+  background: rgba(var(--rgb), 0.25);
+}
+
+.step-button:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.step-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Reduced motion: keep everything functional, drop decoration
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}

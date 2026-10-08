@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#070a12">
+  <meta name="description" content="An interactive glass thermometer whose liquid, glow and atmosphere respond smoothly to temperature.">
+  <title>Glass Thermometer</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='26' y='6' width='12' height='38' rx='6' fill='%2322d3ee'/%3E%3Ccircle cx='32' cy='47' r='13' fill='%2322d3ee'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <main class="app" id="app" data-active-mode="live">
+    <header class="app-header">
+      <p class="eyebrow">Interactive visualization</p>
+      <h1>Glass Thermometer</h1>
+    </header>
+
+    <section class="readout" aria-labelledby="readout-label">
+      <h2 class="readout-label" id="readout-label">Current temperature</h2>
+      <p class="readout-value">
+        <span id="temperature-number">22.0</span><span class="readout-unit" id="temperature-unit">°C</span>
+      </p>
+      <p class="readout-status" id="temperature-status" role="status">Comfortable</p>
+    </section>
+
+    <section class="stage" aria-label="Thermometer">
+      <div class="thermo" id="thermo" aria-hidden="true">
+        <span class="scale-unit" id="scale-unit">°C</span>
+        <ul class="scale" id="scale"></ul>
+
+        <div class="bulb-glow"></div>
+        <div class="bulb">
+          <div class="bulb-liquid"></div>
+          <div class="glare"></div>
+        </div>
+
+        <div class="tube">
+          <div class="liquid-track">
+            <div class="liquid-glow"></div>
+            <div class="liquid"></div>
+          </div>
+          <div class="glare"></div>
+        </div>
+
+        <div class="marker-track">
+          <div class="marker"><span class="marker-value" id="marker-value">22.0°C</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="controls panel" aria-label="Thermometer controls">
+      <div class="control-group">
+        <span class="control-title" id="mode-title">Mode</span>
+        <div class="segmented segmented-3" id="mode-switch" role="group" aria-labelledby="mode-title" data-index="0">
+          <button type="button" class="segment" data-mode="live" aria-pressed="true">Live</button>
+          <button type="button" class="segment" data-mode="auto" aria-pressed="false">Auto</button>
+          <button type="button" class="segment" data-mode="manual" aria-pressed="false">Manual</button>
+        </div>
+        <p class="hint" id="mode-hint"></p>
+      </div>
+
+      <div class="control-group">
+        <div class="slider-head">
+          <label class="control-title" for="temperature-slider">Temperature</label>
+          <output class="slider-output" id="slider-output" for="temperature-slider" aria-live="off">22.0°C</output>
+        </div>
+        <div class="slider-row">
+          <button type="button" class="step-button" id="decrease" aria-label="Decrease temperature">&minus;</button>
+          <input class="slider" id="temperature-slider" type="range" min="-30" max="100" step="0.5" value="22">
+          <button type="button" class="step-button" id="increase" aria-label="Increase temperature">+</button>
+        </div>
+        <div class="slider-limits" aria-hidden="true">
+          <span id="limit-min">−30°C</span>
+          <span id="limit-max">100°C</span>
+        </div>
+      </div>
+
+      <div class="control-group control-inline">
+        <span class="control-title" id="unit-title">Unit</span>
+        <div class="segmented segmented-compact" id="unit-switch" role="group" aria-labelledby="unit-title" data-index="0">
+          <button type="button" class="segment" data-unit="C" aria-pressed="true" aria-label="Celsius">°C</button>
+          <button type="button" class="segment" data-unit="F" aria-pressed="false" aria-label="Fahrenheit">°F</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
